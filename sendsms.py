@@ -9,15 +9,15 @@ parser.add_argument('-q','--quiet', action='store_true',default=False, help="Don
 parser.add_argument('-d','--debug', action='store_true',default=False, help="Show debugging information.")
 parser.add_argument('-u','--username', help="Supply username here. If supplied, you will be prompted for the password")
 parser.add_argument('--force-login', action='store_true',help="Force a new login, dumping old cookies and session information")
-parser.add_argument("to",help="The number to send the message to. Can be a nick as defined in the authfile")
+parser.add_argument("to",help="The number to send the message to. Can be a nick as defined in the Phonebook section of authfile. Will check first in the Phonebook")
 parser.add_argument("message",default=None, nargs='?',help="The message you want to send. Else will be read from stdin")
 args=parser.parse_args()
 
 logging.basicConfig(level=logging.WARNING if args.quiet else logging.DEBUG if args.debug else logging.INFO, format="%(message)s")
 loginfo=logging.info
 config=ConfigParser.ConfigParser()
-loginfo("Reading Authfile:%s" % args.authfile)
-
+        
+loginfo("Reading Authfile:%s" % args.authfile)        
 if not config.read(args.authfile):
     logging.critical("Cannot Open authfile: %s.\n"
                      "Run with --setup argument to setup your authfile.\n"
@@ -25,6 +25,37 @@ if not config.read(args.authfile):
     sys.exit(0)
 loginfo("Read!")
 confget=config.get
+def get_from_phonebook(name):
+    if config.has_option('Phonebook',name):
+        try:
+            to=str(config.getint('Phonebook', args.to)) #this ensure that the file contains a valid int
+        except ValueError:
+            logging.critical ("Your phonebook contains a malformed entry for %s" % name)
+            sys.exit(4)
+        else:
+            return to
+    else:
+        return None
+
+try:
+    to=str(int(args.to)) # a quick check if it consist of only numbers.
+except ValueError:
+    #That means that the args.to was not a number, now try to check if it is on Phonebook
+    to=get_from_phonebook(args.to)
+    if not to:
+        #not exist in phonebook
+        logging.critical("The name %s you specified was not found in the Phone book." % args.to)
+        sys.exit(4)
+    else:
+        loginfo("Read %s's number from the phonebook as %s" % (args.to, to))
+
+if not len(to) == 10:
+    logging.critical("The number must be of 10 digits")
+    sys.exit(4)
+
+        
+        
+
 if args.message:
     message=args.message
 else:
@@ -46,6 +77,7 @@ logging.debug("Logging using url: %s" % confget('Auth','logincheck'))
 login_encode=urllib.urlencode({'username':username, 'pass':password})
 o = urllib2.build_opener( urllib2.HTTPCookieProcessor() )
 f = o.open(confget('Auth','logincheck'),login_encode)
+
 logging.debug("Sent Login information, got the following return URL: %s", f.geturl())
 if f.geturl()==confget('Auth','logindone'):
     loginfo("Login Successfull")
@@ -57,14 +89,15 @@ loginfo("Now trying to fetch the unique send request number")
 # get the unique sending request number (?r=1022401524)
 f = o.open(config.get('Auth','sendsms'))
 s = f.read()
+
 compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
 #the unique number GET argument appended to send_msgs.php
 send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
 fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
 logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
-loginfo("Sending to %s, the following message:\n %s" % (args.to,message))
+loginfo("Sending to %s, the following message:\n%s" % (to,message))
 info =  urllib.urlencode({
-        'receiver':args.to,                     #number of the person to whom you are sending
+        'receiver':to,                     #number of the person to whom you are sending
         'receiver_msg': message,                #the message
         'sender_name': confget('Login','name'), #sender's name, don't know if it is required
         'spam_check_code': "",                  #website put it as blank
@@ -72,6 +105,7 @@ info =  urllib.urlencode({
         })
 logging.debug("POST Query: %s" % info)
 f = o.open(fullsendsms,info)
+
 returl = f.geturl()
 logging.debug("Returned URL: %s" % returl)
 if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent'):
