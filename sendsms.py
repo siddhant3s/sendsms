@@ -90,6 +90,15 @@ else:
     cookieprocessor=urllib2.HTTPCookieProcessor(filecookiejar)
     try_with_previous=True
 o = urllib2.build_opener( cookieprocessor )
+def tryopen(opener,url,data=None):
+    global logging
+    while True:
+        try:
+            f = opener.open(url,data)
+            return f
+        except urllib2.URLError:
+            logging.debug("Caught an Exception URLError. Retrying...")
+            pass
 ### sendmessage function
 def sendmessage(to_number,messagel):
     global confget
@@ -98,7 +107,7 @@ def sendmessage(to_number,messagel):
     ### Fetch the Unique send request ID
     loginfo("Now trying to fetch the unique send request number")
     # get the unique sending request number (?r=1022401524)
-    f = o.open(config.get('Auth','sendsms'))
+    f = tryopen(o,config.get('Auth','sendsms'))
     s = f.read()
     compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
     #the unique number GET argument appended to send_msgs.php
@@ -115,7 +124,8 @@ def sendmessage(to_number,messagel):
             'sms_type':'3'                          #website defines this type as `flash sms'
             })
     logging.debug("POST Query: %s" % info)
-    f = o.open(fullsendsms,info)
+    
+    f = tryopen(o,fullsendsms,info)
     ###
     ### check if it was sent properly
     returl = f.geturl()
@@ -139,7 +149,7 @@ def login(uname,passwd):
     logging.debug("login_encode:%s" % login_encode)
     cookieprocessor=urllib2.HTTPCookieProcessor() #new cookie processor
     o = urllib2.build_opener(cookieprocessor) # a new urlopener
-    f = o.open(confget('Auth','logincheck'),login_encode)
+    f = tryopen(o,confget('Auth','logincheck'),login_encode)
     logging.debug("Sent Login information, got the following return URL: %s", f.geturl())
     if f.geturl()==confget('Auth','logindone'):
         #save cookies
