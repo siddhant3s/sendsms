@@ -5,11 +5,12 @@ default_auth_file=os.path.expanduser('~/.sendsms.auth')
 ### Command Line Praser's Arguements
 parser=argparse.ArgumentParser(description="Sends sms non-interctively using indyarocks.com")
 parser.add_argument('-t','--authfile',metavar='FILE',default=default_auth_file,help='Specify the authorization file mannually. By default it is ~/.sendsms.auth')
+parser.add_argument('-s','--setup',action='store_true',default=False, help= "Configure and generate the default authfile for the first time. Will change the existing authfile if existed")
 parser.add_argument('-q','--quiet', action='store_true',default=False, help="Don't output anything. Overrides --debug below")
 parser.add_argument('-d','--debug', action='store_true',default=False, help="Show debugging information.")
 parser.add_argument('-u','--username', help="Supply username here. If supplied, you will be prompted for the password")
 parser.add_argument('--force-login', action='store_true',help="Force a new login, dumping old cookies and session information")
-parser.add_argument("to",help="The number to send the message to. Can be a nick as defined in the Phonebook section of authfile. Will check first in the Phonebook")
+parser.add_argument("to",nargs='?', default=None,help="The number to send the message to. Can be a nick as defined in the Phonebook section of authfile. Will check first in the Phonebook")
 parser.add_argument("message",default=None, nargs='?',help="The message you want to send. Else will be read from stdin")
 args=parser.parse_args()
 ### End Parser
@@ -19,12 +20,46 @@ loginfo=logging.info
 config=ConfigParser.ConfigParser()
         
 loginfo("Reading Authfile:%s" % args.authfile)        
-if not config.read(args.authfile):
+if not config.read(args.authfile) and not args.setup:
     logging.critical("Cannot Open authfile: %s.\n"
                      "Run with --setup argument to setup your authfile.\n"
                      "Exiting\n"%args.authfile)
     sys.exit(0)
-loginfo("Read!")
+else: 
+    loginfo("Read!")
+if args.setup:
+    try:
+        config.add_section("Login")
+    except ConfigParser.DuplicateSectionError:
+        pass
+    try:
+        config.add_section("Auth")
+    except ConfigParser.DuplicateSectionError:
+        pass
+    try:
+        config.add_section("Phonebook")
+    except ConfigParser.DuplicateSectionError:
+        pass
+
+    config.set('Login','username',raw_input("Enter your uesrname:"))
+    config.set('Login','password',getpass.getpass("Enter your password:"))
+    config.set('Login','name',raw_input("Enter your Name:"))
+    config.set('Auth','loginpage','http://www.indyarocks.com/login.php')
+    config.set('Auth','logincheck','http://www.indyarocks.com/loginchk.php')
+    config.set('Auth','logindone','http://www.indyarocks.com/profile/profile_main.php')
+    config.set('Auth','sendsms','http://www.indyarocks.com/send/freesms.php')
+    config.set('Auth','sms_sent','sms_sent.php')
+    with open(args.authfile, 'wb') as configfile:
+        config.write(configfile)
+    loginfo("Written file %s. Now exiting." % args.authfile)
+    sys.exit(0)
+else:
+    if not args.to:
+        logging.critical("Cannot find the 'to' argument. You did not specified to whom the message has to be sent")
+        parser.print_help()
+        sys.exit(5)
+        
+
 confget=config.get
 ### function that get's from Phonebook
 def get_from_phonebook(name):
