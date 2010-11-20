@@ -1,8 +1,8 @@
 #!/usr/bin/python2
-import urllib, urllib2, urlparse, re, argparse, ConfigParser, os.path, getpass,sys,logging
+import urllib, urllib2, urlparse, re, argparse, ConfigParser, os.path, getpass,sys,logging, cookielib
 
 default_auth_file=os.path.expanduser('~/.sendsms.auth')
-
+### Command Line Praser's Arguements
 parser=argparse.ArgumentParser(description="Sends sms non-interctively using indyarocks.com")
 parser.add_argument('-t','--authfile',metavar='FILE',default=default_auth_file,help='Specify the authorization file mannually. By default it is ~/.sendsms.auth')
 parser.add_argument('-q','--quiet', action='store_true',default=False, help="Don't output anything. Overrides --debug below")
@@ -12,7 +12,8 @@ parser.add_argument('--force-login', action='store_true',help="Force a new login
 parser.add_argument("to",help="The number to send the message to. Can be a nick as defined in the Phonebook section of authfile. Will check first in the Phonebook")
 parser.add_argument("message",default=None, nargs='?',help="The message you want to send. Else will be read from stdin")
 args=parser.parse_args()
-
+### End Parser
+### Load Config File
 logging.basicConfig(level=logging.WARNING if args.quiet else logging.DEBUG if args.debug else logging.INFO, format="%(message)s")
 loginfo=logging.info
 config=ConfigParser.ConfigParser()
@@ -25,6 +26,7 @@ if not config.read(args.authfile):
     sys.exit(0)
 loginfo("Read!")
 confget=config.get
+### function that get's from Phonebook
 def get_from_phonebook(name):
     if config.has_option('Phonebook',name):
         try:
@@ -36,7 +38,8 @@ def get_from_phonebook(name):
             return to
     else:
         return None
-
+###
+### Set the global variable 'to' 
 try:
     to=str(int(args.to)) # a quick check if it consist of only numbers.
 except ValueError:
@@ -52,10 +55,8 @@ except ValueError:
 if not len(to) == 10:
     logging.critical("The number must be of 10 digits")
     sys.exit(4)
-
-        
-        
-
+###
+### Fetch the message either from stdin or --message        
 if args.message:
     message=args.message
 else:
@@ -63,15 +64,18 @@ else:
     message=sys.stdin.read()
 
 message=message[:140]
+###
+### Fetch Username either from --username or prompt
 if args.username:
     username=args.username
     password=getpass.getpass("Enter the password:")
 else:
     username=confget('Login','username')
     password=confget('Login','password')
-
+###
 loginfo("Username:%s" % username)
 logging.debug("Password:%s" % password)
+### Logging in
 loginfo("Trying to login")
 logging.debug("Logging using url: %s" % confget('Auth','logincheck'))
 login_encode=urllib.urlencode({'username':username, 'pass':password})
@@ -84,7 +88,9 @@ if f.geturl()==confget('Auth','logindone'):
 else:
     loginfo("Login Failed. Check username, password")
     sys.exit(3)
+###
 
+### Fetch the Unique send request ID
 loginfo("Now trying to fetch the unique send request number")
 # get the unique sending request number (?r=1022401524)
 f = o.open(config.get('Auth','sendsms'))
@@ -95,6 +101,7 @@ compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
 send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
 fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
 logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
+### send the message
 loginfo("Sending to %s, the following message:\n%s" % (to,message))
 info =  urllib.urlencode({
         'receiver':to,                     #number of the person to whom you are sending
@@ -105,7 +112,8 @@ info =  urllib.urlencode({
         })
 logging.debug("POST Query: %s" % info)
 f = o.open(fullsendsms,info)
-
+###
+### check if it was sent properly
 returl = f.geturl()
 logging.debug("Returned URL: %s" % returl)
 if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent'):
@@ -113,4 +121,4 @@ if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent
 else:
     loginfo("SMS Not sent. Can't figure out why. Perhaps try again later")
 
-
+###
