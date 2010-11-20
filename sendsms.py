@@ -75,6 +75,9 @@ else:
 ###
 loginfo("Username:%s" % username)
 logging.debug("Password:%s" % password)
+
+
+
 ### Logging in
 loginfo("Trying to login")
 logging.debug("Logging using url: %s" % confget('Auth','logincheck'))
@@ -101,24 +104,33 @@ compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
 send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
 fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
 logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
-### send the message
+
+def sendmessage(to_number,message):
+    global confget
+    global o
+    global logging
+    ### send the message
+
+    info =  urllib.urlencode({
+            'receiver':to,                     #number of the person to whom you are sending
+            'receiver_msg': message,                #the message
+            'sender_name': confget('Login','name'), #sender's name, don't know if it is required
+            'spam_check_code': "",                  #website put it as blank
+            'sms_type':'3'                          #website defines this type as `flash sms'
+            })
+    logging.debug("POST Query: %s" % info)
+    f = o.open(fullsendsms,info)
+    ###
+    ### check if it was sent properly
+    returl = f.geturl()
+    logging.debug("Returned URL: %s" % returl)
+    if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent'):
+        return True
+    else:
+        return False
+    ###
 loginfo("Sending to %s, the following message:\n%s" % (to,message))
-info =  urllib.urlencode({
-        'receiver':to,                     #number of the person to whom you are sending
-        'receiver_msg': message,                #the message
-        'sender_name': confget('Login','name'), #sender's name, don't know if it is required
-        'spam_check_code': "",                  #website put it as blank
-        'sms_type':'3'                          #website defines this type as `flash sms'
-        })
-logging.debug("POST Query: %s" % info)
-f = o.open(fullsendsms,info)
-###
-### check if it was sent properly
-returl = f.geturl()
-logging.debug("Returned URL: %s" % returl)
-if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent'):
+if sendmessage(to,message):
     loginfo("Seems like the SMS was sucessfully sent. Exiting")
 else:
     loginfo("SMS Not sent. Can't figure out why. Perhaps try again later")
-
-###
