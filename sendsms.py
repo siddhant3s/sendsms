@@ -75,42 +75,38 @@ else:
 ###
 loginfo("Username:%s" % username)
 logging.debug("Password:%s" % password)
-
-
-
-### Logging in
-loginfo("Trying to login")
-logging.debug("Logging using url: %s" % confget('Auth','logincheck'))
-login_encode=urllib.urlencode({'username':username, 'pass':password})
-o = urllib2.build_opener( urllib2.HTTPCookieProcessor() )
-f = o.open(confget('Auth','logincheck'),login_encode)
-
-logging.debug("Sent Login information, got the following return URL: %s", f.geturl())
-if f.geturl()==confget('Auth','logindone'):
-    loginfo("Login Successfull")
+### Cookies
+filecookiejar = cookielib.MozillaCookieJar(os.path.expanduser('~/.sendsms.cookies'))
+try_with_previous = False
+try:
+    filecookiejar.load(ignore_discard=True)
+except:
+    logging.debug("Cannot open the cookie file. Check if it exists. Ignore if this is first time.")
+    cookieprocessor=urllib2.HTTPCookieProcessor()
+    loginfo("No previous Authentication session")
 else:
-    loginfo("Login Failed. Check username, password")
-    sys.exit(3)
-###
-
-### Fetch the Unique send request ID
-loginfo("Now trying to fetch the unique send request number")
-# get the unique sending request number (?r=1022401524)
-f = o.open(config.get('Auth','sendsms'))
-s = f.read()
-
-compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
-#the unique number GET argument appended to send_msgs.php
-send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
-fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
-logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
-
-def sendmessage(to_number,message):
+    loginfo("Previous Authentication session found. Will try with that first")
+    logging.debug("Previous Cookie read from file: %s" % filecookiejar)
+    cookieprocessor=urllib2.HTTPCookieProcessor(filecookiejar)
+    try_with_previous=True
+o = urllib2.build_opener( cookieprocessor )
+### sendmessage function
+def sendmessage(to_number,messagel):
     global confget
     global o
     global logging
-    ### send the message
+    ### Fetch the Unique send request ID
+    loginfo("Now trying to fetch the unique send request number")
+    # get the unique sending request number (?r=1022401524)
+    f = o.open(config.get('Auth','sendsms'))
+    s = f.read()
+    compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
+    #the unique number GET argument appended to send_msgs.php
+    send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
+    fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
+    logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
 
+    ### send the message
     info =  urllib.urlencode({
             'receiver':to,                     #number of the person to whom you are sending
             'receiver_msg': message,                #the message
@@ -125,12 +121,59 @@ def sendmessage(to_number,message):
     returl = f.geturl()
     logging.debug("Returned URL: %s" % returl)
     if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent'):
+        return 'sent'
+    elif returl == confget('Auth','loginpage'):
+        return 'login'
+    else:
+        return 'failed'
+    ###
+###
+### login function 
+def login(uname,passwd):
+    global logging
+    global o
+    global confget
+    global filecookiejar
+    logging.debug("Logging using url: %s" % confget('Auth','logincheck'))
+    login_encode=urllib.urlencode({'username':uname, 'pass':passwd})
+    logging.debug("login_encode:%s" % login_encode)
+    cookieprocessor=urllib2.HTTPCookieProcessor() #new cookie processor
+    o = urllib2.build_opener(cookieprocessor) # a new urlopener
+    f = o.open(confget('Auth','logincheck'),login_encode)
+    logging.debug("Sent Login information, got the following return URL: %s", f.geturl())
+    if f.geturl()==confget('Auth','logindone'):
+        #save cookies
+        cj=cookieprocessor.cookiejar
+        cookie=enumerate(cj).next()[1]
+        logging.debug("New Cookie:%s:" % cookie)
+        filecookiejar.set_cookie(cookie)
+        filecookiejar.save(ignore_discard=True)
+        logging.debug("Cookies saved in %s" % filecookiejar.filename)
         return True
     else:
         return False
-    ###
+###
+### Send the message and check if it was sent
 loginfo("Sending to %s, the following message:\n%s" % (to,message))
-if sendmessage(to,message):
-    loginfo("Seems like the SMS was sucessfully sent. Exiting")
-else:
-    loginfo("SMS Not sent. Can't figure out why. Perhaps try again later")
+###First check without loggin in using previous cookies
+logging.debug("try_with_previous:%s"% try_with_previous)
+while True:
+    if not try_with_previous:
+         ### Logging in
+        loginfo("Trying to login")
+        if login(username,password):
+            loginfo("Login Successfull")
+            try_with_previous=True
+        else:
+            loginfo("Login Failed. Check username, password")
+            sys.exit(3)
+            
+    result=sendmessage(to,message)
+    if result=='sent':
+        loginfo("Seems Like message was successfully sent.")
+        sys.exit(0)
+    elif result=='failed':
+        loginfo("SMS Not sent. Can't figure out why. Perhaps try again later")
+        sys.exit(2)
+    elif result=='login':
+        try_with_previous=False
