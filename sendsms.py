@@ -52,6 +52,10 @@ if args.setup:
     with open(args.authfile, 'wb') as configfile:
         config.write(configfile)
     loginfo("Written file %s. Now exiting." % args.authfile)
+    if(os.path.exists(os.path.expanduser('~/.sendsms.cookies'))):
+        os.remove(os.path.expanduser('~/.sendsms.cookies'))
+        loginfo("Previous session file removed")
+    
     sys.exit(0)
 else:
     if not args.to:
