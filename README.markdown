@@ -1,20 +1,27 @@
+sendsms.py
+=========
+It is a small python script which act as a simple non-interactive front-end to the sms facility provided by indyarocks dot com. This allows message sending through terminal or even in bash scripts and other programs.
+Requirement
+----------
+-	Python2.x
+-	An account at indyarocks dot com
 Installation
-============
+------------
 Download the script as sendsms.py
 
 First time run:
-Run the script with the --setup argument
+Run the script with the `--setup` argument
   $:	./sendsms.py --setup
 The script will ask you your indyarocks.com username, password, and full name.
 That's it! setup complete.
 
 Usage
-=====
+----
 
 *	To send an sms to a number 9812345678 type
 	   	$:./sendsms.py 9812345678 "This message will be sent via SMS"
 
-   	You may ommit the message part in the command line arguement. In that case, the script will prompt you to enter through standard input
+   	You may omit the message part in the command line argument. In that case, the script will prompt you to enter through standard input
 
 		$:./sendsms.py 9812345678
 		Reading Authfile:/home/user/.sendsms.auth
@@ -24,11 +31,11 @@ Usage
 		I can give multiline messages too.
 		Ctrl+D
 
-	here Ctrl+D is the End-Of-File sequence (On Windows, it would be Ctrl+Z I think)
+	here `Ctrl+D` is the End-Of-File sequence (On Windows, it would be `Ctrl+Z` I think)
 
-*	You can also specify your phonebook in the authfile (defualt is .sendsms.auth)
-	Open the file .sendsms.auth
-	In the [Phonebook] section, just enter the name=number values
+*	You can also specify your phone book in the authfile (default is .sendsms.auth)
+	Open the file `.sendsms.auth`
+	In the `[Phonebook]` section, just enter the `name=number` values
 
 	   	## .sendsms.auth
 		##
@@ -46,23 +53,33 @@ Usage
 
 	     	$:./sendsms.py bill "Hello Bill, how are you doing"
 
-*	You can also specify multiple recievers's seperated by a dot `.' to send the same message to more than one reciever.
+*	You can also specify multiple receivers separated by a dot `.` to send the same message to more than one receiver.
 	    	$./sendsms.py bill.9897949554.neo "This is a message"
 
 
 Windows Users
-=============
+------------
 Windows users are required to install Python 2.x (that is any Python 2 version).
-They need to use the command prompt with explicity Python program.
+They need to use the command prompt with explicit Python program.
 That is, instead of
-     	      $: ./sendsms.py reciver message
+     	      $: ./sendsms.py receiver message
 They need to use
-     	      $: python sendsms.py reciever message
+     	      $: python sendsms.py receiver message
 Example
 	      > python sendsms.py bill "HI Bill"
 
-You might also need to add Python to your system path. You can do this by typing the following command in your command line (invoked by cmd.exe)
+You might also need to add Python to your system `PATH`. You can do this by typing the following command in your command line (invoked by `cmd.exe`)
     	      path = %PATH%;C:\Python27\
 where C:\Python27 is the place where your Python is installed
--------------------------------------------------------------------
+
+Getting an indyarocks dot com account
+-------------------------------------
+Getting account on indyarocks dot com is easy. If you have valid mobile phone number of India, you can register it with indyarocks dot com easily. They send a verification code on your mobile.
+If you are changing your account settings in `sendsms.py`, please use the `--setup` option instead of directly changing the Authfile by hand.
+
+DISCLAIMER
+=========
+The author of this script is in no way associated with indyarocks dot com. This script is for personal or educational use only. Any commercial use is forbidden. Author takes no responsibility whatsoever if this script is misused in any way. Also, there is no warranty of any kind with this script.
+
+
     
