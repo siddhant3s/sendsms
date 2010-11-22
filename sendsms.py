@@ -69,7 +69,7 @@ confget=config.get
 def get_from_phonebook(name):
     if config.has_option('Phonebook',name):
         try:
-            to=str(config.getint('Phonebook', args.to)) #this ensure that the file contains a valid int
+            to=str(config.getint('Phonebook', name)) #this ensure that the file contains a valid int
         except ValueError:
             logging.critical ("Your phonebook contains a malformed entry for %s" % name)
             sys.exit(4)
@@ -79,21 +79,30 @@ def get_from_phonebook(name):
         return None
 ###
 ### Set the global variable 'to' 
-try:
-    to=str(int(args.to)) # a quick check if it consist of only numbers.
-except ValueError:
+senders=args.to.split(".") #make a list of all the senders
+senders_numbers=[] #contains the numbers of all senders
+print senders
+for s in senders:
+    try:
+        to=str(int(s)) # a quick check if it consist of only numbers.
+    except ValueError:
     #That means that the args.to was not a number, now try to check if it is on Phonebook
-    to=get_from_phonebook(args.to)
-    if not to:
+        to=get_from_phonebook(s)
+        if not to:
         #not exist in phonebook
-        logging.critical("The name %s you specified was not found in the Phone book." % args.to)
-        sys.exit(4)
-    else:
-        loginfo("Read %s's number from the phonebook as %s" % (args.to, to))
+            logging.critical("The name %s you specified was not found in the Phone book." % args.to)
+            sys.exit(4)
+        else:
+            loginfo("Read %s's number from the phonebook as %s" % (s, to))
 
-if not len(to) == 10:
-    logging.critical("The number must be of 10 digits")
-    sys.exit(4)
+    if not len(to) == 10:
+        logging.critical("The number must be of 10 digits")
+        sys.exit(4)
+    senders_numbers.append(to)
+
+
+loginfo("The message will be sent to the following numbers:\n %s"% str(senders_numbers)[1:-1])
+
 ###
 ### Fetch the message either from stdin or --message        
 if args.message:
@@ -201,30 +210,32 @@ def login(uname,passwd):
         return True
     else:
         return False
-###
-### Send the message and check if it was sent
-loginfo("Sending to %s, the following message:\n%s" % (to,message))
-###First check without loggin in using previous cookies
-logging.debug("try_with_previous:%s"% try_with_previous)
-while True:
-    if not try_with_previous:
+for n in senders_numbers:
+    ###
+    ### Send the message and check if it was sent
+    loginfo("Sending to %s, the following message:\n%s" % (n,message))
+    ###First check without loggin in using previous cookies
+    logging.debug("try_with_previous:%s"% try_with_previous)
+    while True:
+        if not try_with_previous:
          ### Logging in
-        loginfo("Trying to login")
-        if login(username,password):
-            loginfo("Login Successfull")
-            try_with_previous=True
-        else:
-            loginfo("Login Failed. Check username, password")
-            sys.exit(3)
-            
-    result=sendmessage(to,message)
-    if result=='sent':
-        loginfo("Seems Like message was successfully sent.")
-        loginfo("\a")
-        loginfo("\a")
-        sys.exit(0)
-    elif result=='failed':
-        loginfo("SMS Not sent. Can't figure out why. Perhaps try again later")
-        sys.exit(2)
-    elif result=='login':
-        try_with_previous=False
+            loginfo("Trying to login")
+            if login(username,password):
+                loginfo("Login Successfull")
+                try_with_previous=True
+            else:
+                loginfo("Login Failed. Check username, password")
+                sys.exit(3)
+                
+        result=sendmessage(n,message)
+        if result=='sent':
+            loginfo("Seems Like message was successfully sent to %s.\n" % n)
+            loginfo("\a")
+            loginfo("\a")
+            break
+        elif result=='failed':
+            loginfo("SMS Not sent to %s. Can't figure out why. Perhaps try again later\n" % n)
+            break
+        elif result=='login':
+            try_with_previous=False
+                
