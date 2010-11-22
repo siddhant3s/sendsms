@@ -229,8 +229,7 @@ for n in senders_numbers:
                 
         result=sendmessage(n,message)
         if result=='sent':
-            loginfo("Seems Like message was successfully sent to %s.\n" % n)
-            loginfo("\a")
+            loginfo("Seems Like message was successfully sent to %s." % n)
             loginfo("\a")
             break
         elif result=='failed':
