@@ -148,7 +148,7 @@ def tryopen(opener,url,data=None):
             logging.debug("Caught an Exception URLError. Retrying...")
             pass
 ### sendmessage function
-def sendmessage(to_number,messagel):
+def sendmessage(to_number,message):
     global confget
     global o
     global logging
@@ -165,7 +165,7 @@ def sendmessage(to_number,messagel):
 
     ### send the message
     info =  urllib.urlencode({
-            'receiver':to,                     #number of the person to whom you are sending
+            'receiver':to_number,                     #number of the person to whom you are sending
             'receiver_msg': message,                #the message
             'sender_name': confget('Login','name'), #sender's name, don't know if it is required
             'spam_check_code': "",                  #website put it as blank
@@ -226,7 +226,6 @@ for n in senders_numbers:
             else:
                 loginfo("Login Failed. Check username, password")
                 sys.exit(3)
-                
         result=sendmessage(n,message)
         if result=='sent':
             loginfo("Seems Like message was successfully sent to %s." % n)
