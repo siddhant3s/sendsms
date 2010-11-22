@@ -1,10 +1,12 @@
 sendsms.py
 =========
 It is a small python script which act as a simple non-interactive front-end to the sms facility provided by indyarocks dot com. This allows message sending through terminal or even in bash scripts and other programs.
+
 Requirement
 ----------
 -	Python2.x
 -	An account at indyarocks dot com
+
 Installation
 ------------
 Download the script as sendsms.py
