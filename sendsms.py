@@ -220,6 +220,8 @@ while True:
     result=sendmessage(to,message)
     if result=='sent':
         loginfo("Seems Like message was successfully sent.")
+        loginfo("\a")
+        loginfo("\a")
         sys.exit(0)
     elif result=='failed':
         loginfo("SMS Not sent. Can't figure out why. Perhaps try again later")
