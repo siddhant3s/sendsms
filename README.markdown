@@ -79,6 +79,8 @@ Getting an indyarocks dot com account
 Getting account on indyarocks dot com is easy. If you have valid mobile phone number of India, you can register it with indyarocks dot com easily. They send a verification code on your mobile.
 If you are changing your account settings in `sendsms.py`, please use the `--setup` option instead of directly changing the Authfile by hand.
 
+*IMPORTANT** *Please register your mobile phone on the website( that means you have to verify your mobile number with them), otherwise the reciever of the message will not see your number as the sender on his/her mobile phone.*
+
 DISCLAIMER
 =========
 The author of this script is in no way associated with indyarocks dot com. This script is for personal or educational use only. Any commercial use is forbidden. Author takes no responsibility whatsoever if this script is misused in any way. Also, there is no warranty of any kind with this script.
