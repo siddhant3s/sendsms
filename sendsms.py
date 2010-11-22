@@ -1,4 +1,12 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
+
+# @Script sendsms.py
+# @Author Siddhant Sanyam (siddhant3s@gmail.com)
+# @Online http://github.com/siddhant3s/sendsms
+# @Requires Python2
+# @Lisense BSD License 
+
+
 import urllib, urllib2, urlparse, re, argparse, ConfigParser, os.path, getpass,sys,logging, cookielib
 
 default_auth_file=os.path.expanduser('~/.sendsms.auth')
@@ -81,7 +89,7 @@ def get_from_phonebook(name):
 ### Generating the senders_numbers list
 senders=args.to.split(".") #make a list of all the senders
 senders_numbers=[] #contains the numbers of all senders
-print senders
+
 for s in senders:
     try:
         to=str(int(s)) # a quick check if it consist of only numbers.
