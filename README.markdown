@@ -11,14 +11,14 @@ Download the script as sendsms.py
 
 First time run:
 Run the script with the `--setup` argument
-  $:	./sendsms.py --setup
+    	        $:	./sendsms.py --setup
 The script will ask you your indyarocks.com username, password, and full name.
 That's it! setup complete.
 
 Usage
 ----
 
-*	To send an sms to a number 9812345678 type
+*	To send an sms to a number *9812345678* type
 	   	$:./sendsms.py 9812345678 "This message will be sent via SMS"
 
    	You may omit the message part in the command line argument. In that case, the script will prompt you to enter through standard input
@@ -62,14 +62,14 @@ Windows Users
 Windows users are required to install Python 2.x (that is any Python 2 version).
 They need to use the command prompt with explicit Python program.
 That is, instead of
-     	      $: ./sendsms.py receiver message
+     $: ./sendsms.py receiver message
 They need to use
-     	      $: python sendsms.py receiver message
+     $: python sendsms.py receiver message
 Example
-	      > python sendsms.py bill "HI Bill"
+     > python sendsms.py bill "HI Bill"
 
 You might also need to add Python to your system `PATH`. You can do this by typing the following command in your command line (invoked by `cmd.exe`)
-    	      path = %PATH%;C:\Python27\
+     path = %PATH%;C:\Python27\
 where C:\Python27 is the place where your Python is installed
 
 Getting an indyarocks dot com account

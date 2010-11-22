@@ -10,7 +10,7 @@ parser.add_argument('-q','--quiet', action='store_true',default=False, help="Don
 parser.add_argument('-d','--debug', action='store_true',default=False, help="Show debugging information.")
 parser.add_argument('-u','--username', help="Supply username here. If supplied, you will be prompted for the password")
 parser.add_argument('--force-login', action='store_true',help="Force a new login, dumping old cookies and session information")
-parser.add_argument("to",nargs='?', default=None,help="The number to send the message to. Can be a nick as defined in the Phonebook section of authfile. Will check first in the Phonebook")
+parser.add_argument("to",nargs='?', default=None,help="The number to send the message to. Can be a nick as defined in the Phonebook section of authfile. Can be multiple recipients separated by dot (.) ")
 parser.add_argument("message",default=None, nargs='?',help="The message you want to send. Else will be read from stdin")
 args=parser.parse_args()
 ### End Parser
@@ -78,7 +78,7 @@ def get_from_phonebook(name):
     else:
         return None
 ###
-### Set the global variable 'to' 
+### Generating the senders_numbers list
 senders=args.to.split(".") #make a list of all the senders
 senders_numbers=[] #contains the numbers of all senders
 print senders
@@ -124,8 +124,8 @@ else:
 loginfo("Username:%s" % username)
 logging.debug("Password:%s" % password)
 ### Cookies
-filecookiejar = cookielib.MozillaCookieJar(os.path.expanduser('~/.sendsms.cookies'))
 try_with_previous = False
+filecookiejar = cookielib.MozillaCookieJar(os.path.expanduser('~/.sendsms.cookies'))
 try:
     filecookiejar.load(ignore_discard=True)
 except:
@@ -138,6 +138,9 @@ else:
     cookieprocessor=urllib2.HTTPCookieProcessor(filecookiejar)
     try_with_previous=True
 o = urllib2.build_opener( cookieprocessor )
+if args.force_login:
+    loginfo("--force-login selected. Will not consider previous authentication sessions")
+    try_with_previous = False
 def tryopen(opener,url,data=None):
     global logging
     while True:
