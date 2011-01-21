@@ -170,7 +170,11 @@ def sendmessage(to_number,message):
     s = f.read()
     compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
     #the unique number GET argument appended to send_msgs.php
-    send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
+    try:
+        send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
+    except IndexError:  #There was no GET Arguement found. Return login status
+        logging.debug("Unique send request number not found. Returning loging status")
+        return 'login'
     fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
     logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
 
