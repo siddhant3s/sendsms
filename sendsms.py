@@ -3,7 +3,7 @@
 # @Script sendsms.py
 # @Author Siddhant Sanyam (siddhant3s@gmail.com)
 # @Online http://github.com/siddhant3s/sendsms
-# @Requires Python2
+# @Requires Python2.7 or (Python2.x with argparse.py)
 # @Lisense BSD License 
 
 
