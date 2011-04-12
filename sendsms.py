@@ -119,6 +119,9 @@ else:
     loginfo("Please Enter the message( 160 chars only)")
     message=sys.stdin.read()
 
+if(len(message)>160):
+    logging.critical("Message length exceeded 160 chars by %i chars"%(len(message)-160))
+    sys.exit(4)
 message=message[:160]
 ###
 ### Fetch Username either from --username or prompt
