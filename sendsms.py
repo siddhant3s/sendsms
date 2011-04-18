@@ -159,8 +159,15 @@ def tryopen(opener,url,data=None):
             f = opener.open(url,data)
             return f
         except urllib2.URLError:
-            logging.debug("Caught an Exception URLError. Retrying...")
+            loginfo("Caught an Exception URLError. Retrying...")
             pass
+class SendSMS:
+    """Base class which send sms using various online websties like fullonsms.com"""
+    def __init__(self):
+        pass
+    def sendsms():
+        pass
+
 ### sendmessage function
 def sendmessage(to_number,message):
     global confget
