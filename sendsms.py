@@ -174,6 +174,7 @@ def sendmessage(to_number,message):
         send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
     except IndexError:  #There was no GET Arguement found. Return login status
         logging.debug("Unique send request number not found. Returning loging status")
+        loginfo("Couldn't fetch the unique identification number, check if you registered your mobile number and received the verification code.")
         return 'login'
     fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
     logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
