@@ -49,14 +49,14 @@ if args.setup:
     except ConfigParser.DuplicateSectionError:
         pass
 
-    config.set('Login','username',raw_input("Enter your uesrname:"))
+    config.set('Login','username',raw_input("Enter your phone number registered at FullonSMS:"))
     config.set('Login','password',getpass.getpass("Enter your password:"))
-    config.set('Login','name',raw_input("Enter your Name:"))
-    config.set('Auth','loginpage','http://www.indyarocks.com/login.php')
-    config.set('Auth','logincheck','http://www.indyarocks.com/loginchk.php')
-    config.set('Auth','logindone','http://www.indyarocks.com/profile/profile_main.php')
-    config.set('Auth','sendsms','http://www.indyarocks.com/send/freesms.php')
-    config.set('Auth','sms_sent','sms_sent.php')
+#   config.set('Login','name',raw_input("Enter your Name:"))
+    config.set('Auth','loginpage','http://fullonsms.com/login.php')
+    config.set('Auth','logincheck','http://fullonsms.com/CheckLogin.php')
+    config.set('Auth','logindone','http://fullonsms.com/home.php?Login=1')
+    config.set('Auth','sendsms','http://fullonsms.com/home.php')
+    config.set('Auth','sms_sent','http://fullonsms.com/MsgSent.php')
     with open(args.authfile, 'wb') as configfile:
         config.write(configfile)
     loginfo("Written file %s. Now exiting." % args.authfile)
@@ -116,10 +116,13 @@ loginfo("The message will be sent to the following numbers:\n %s"% str(senders_n
 if args.message:
     message=args.message
 else:
-    loginfo("Please Enter the message( 140 chars only)")
+    loginfo("Please Enter the message( 160 chars only)")
     message=sys.stdin.read()
 
-message=message[:140]
+if(len(message)>160):
+    logging.critical("Message length exceeded 160 chars by %i chars"%(len(message)-160))
+    sys.exit(4)
+message=message[:160]
 ###
 ### Fetch Username either from --username or prompt
 if args.username:
@@ -156,47 +159,41 @@ def tryopen(opener,url,data=None):
             f = opener.open(url,data)
             return f
         except urllib2.URLError:
-            logging.debug("Caught an Exception URLError. Retrying...")
+            loginfo("Caught an Exception URLError. Retrying...")
             pass
+class SendSMS:
+    """Base class which send sms using various online websties like fullonsms.com"""
+    def __init__(self):
+        pass
+    def sendsms():
+        pass
+
 ### sendmessage function
 def sendmessage(to_number,message):
     global confget
     global o
     global logging
-    ### Fetch the Unique send request ID
-    loginfo("Now trying to fetch the unique send request number")
-    # get the unique sending request number (?r=1022401524)
-    f = tryopen(o,config.get('Auth','sendsms'))
-    s = f.read()
-    compiled = re.compile(r'send_msgs.php\?r=[0-9]+')
-    #the unique number GET argument appended to send_msgs.php
-    try:
-        send_msgs_get=compiled.findall(s)[0]      #GET arguement containing unique value r=1022401524
-    except IndexError:  #There was no GET Arguement found. Return login status
-        logging.debug("Unique send request number not found. Returning loging status")
-        loginfo("Couldn't fetch the unique identification number, check if you registered your mobile number and received the verification code.")
-        return 'login'
-    fullsendsms=urlparse.urljoin(confget('Auth','sendsms'),send_msgs_get)
-    logging.debug("Fetched the Unique sending URL: %s " % fullsendsms)
-
     ### send the message
+    fullsendsms=confget('Auth','sendsms')
     info =  urllib.urlencode({
-            'receiver':to_number,                     #number of the person to whom you are sending
-            'receiver_msg': message,                #the message
-            'sender_name': confget('Login','name'), #sender's name, don't know if it is required
-            'spam_check_code': "",                  #website put it as blank
-            'sms_type':'3'                          #website defines this type as `flash sms'
+            "CancelScript":"/home.php",
+            "MobileNos":to_number,
+            "Message":message,
+            "SelGroup":"",
+            "Gender":"0",
+            "FriendName":"Your Friend Name",
+            "ETemplatesId":"",
+            "TabValue":"contacts"
             })
     logging.debug("POST Query: %s" % info)
-    
     f = tryopen(o,fullsendsms,info)
+    data_returned=f.readlines()[-1]
     ###
     ### check if it was sent properly
-    returl = f.geturl()
-    logging.debug("Returned URL: %s" % returl)
-    if os.path.split(urlparse.urlparse(returl).path)[-1] == confget('Auth','sms_sent'):
+    logging.debug("Last line of Data returned: %s" % data_returned)
+    if data_returned.find(confget('Auth','sms_sent'))!=-1:
         return 'sent'
-    elif returl == confget('Auth','loginpage'):
+    elif data_returned.find(confget('Auth','loginpage'))!=-1:
         return 'login'
     else:
         return 'failed'
@@ -209,13 +206,13 @@ def login(uname,passwd):
     global confget
     global filecookiejar
     logging.debug("Logging using url: %s" % confget('Auth','logincheck'))
-    login_encode=urllib.urlencode({'username':uname, 'pass':passwd})
+    login_encode=urllib.urlencode({'MobileNoLogin':uname, 'LoginPassword':passwd})
     logging.debug("login_encode:%s" % login_encode)
     cookieprocessor=urllib2.HTTPCookieProcessor() #new cookie processor
     o = urllib2.build_opener(cookieprocessor) # a new urlopener
     f = tryopen(o,confget('Auth','logincheck'),login_encode)
     logging.debug("Sent Login information, got the following return URL: %s", f.geturl())
-    if f.geturl()==confget('Auth','logindone'):
+    if f.read().find(confget('Auth','logindone')) != -1:
         #save cookies
         cj=cookieprocessor.cookiejar
         cookie=enumerate(cj).next()[1]
