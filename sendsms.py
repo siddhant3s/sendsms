@@ -53,7 +53,7 @@ if args.setup:
     config.set('Login','password',getpass.getpass("Enter your password:"))
 #   config.set('Login','name',raw_input("Enter your Name:"))
     config.set('Auth','loginpage','http://fullonsms.com/login.php')
-    config.set('Auth','logincheck','http://fullonsms.com/CheckLogin.php')
+    config.set('Auth','logincheck','http://fullonsms.com/login.php')
     config.set('Auth','logindone','http://fullonsms.com/home.php?Login=1')
     config.set('Auth','sendsms','http://fullonsms.com/home.php')
     config.set('Auth','sms_sent','http://fullonsms.com/MsgSent.php')
