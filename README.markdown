@@ -1,3 +1,4 @@
+I no longer maintain this script. It seems that fullonsms.com has a captcha which would prevent this (or any such) script from working.
 sendsms.py
 =========
 It is a small python script which act as a simple non-interactive front-end to the sms facility provided by fullonsms dot com. This allows message sending through terminal or even in bash scripts and other programs.
